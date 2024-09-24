@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct movie {
+    char name[50];
+    char time[10];
+    int seats_available;
+    float price;
+};
+
+void display_movies() {
+    FILE *fp;
+    struct movie mv;
+    fp = fopen("movies.dat", "rb");
+    if(fp == NULL) {
+        printf("No movies available\n");
+        return;
+    }
+    printf("----------------------------------------------------------\n");
+    printf("\nList of Movies:\n\n");
+    printf("|%-25s|%-10s|%-10s|%-10s|\n", "Name", "Time", "Price", "Seats");
+    printf("-------------------------------------------------------------\n");
+    while(fread(&mv, sizeof(mv), 1, fp) == 1) {
+        printf("|%-25s|%-10s|%-10.2f|%-10d|\n", mv.name, mv.time, mv.price, mv.seats_available);
+        printf("-------------------------------------------------------------\n");
+    }
+    printf("\n");
+    fclose(fp);
+}
+
+void book_movie() {
+    FILE *fp;
+    struct movie mv;
+    char name[50];
+    int seats;
+
+    fp = fopen("movies.dat", "rb+");
+    if(fp == NULL) {
+        printf("No movies available\n");
+        return;
+    }
+
+    printf("\nEnter movie name: ");
+    scanf("%s", name);
+    printf("Enter number of seats to book: ");
+    scanf("%d", &seats);
+
+    while(fread(&mv, sizeof(mv), 1, fp) == 1) {
+        if(strcmp(mv.name, name) == 0) {
+            if(mv.seats_available >= seats) {
+                mv.seats_available -= seats;
+                printf("\nBooking successful.\n");
+                printf("Amount payable: Rs. %.2f\n\n", seats * mv.price);
+                fseek(fp, sizeof(mv), SEEK_CUR);
+                fwrite(&mv, sizeof(mv), 1, fp);
+            } else {
+                printf("\nSorry, only %d seats available for this movie.\n\n", mv.seats_available);
+            }
+            break;
+        }
+    }
+    if(feof(fp)) {
+        printf("\nMovie not found.\n\n");
+    }
+
+    fclose(fp);
+}
+
+void add_movie() {
+    FILE *fp;
+    struct movie mv;
+    char ch;
+
+    fp = fopen("movies.dat", "ab");
+    if(fp == NULL) {
+        printf("Error opening file\n");
+        return;
+    }
+
+    do {
+        printf("\nEnter movie name: ");
+        scanf("%s", mv.name);
+        printf("Enter show time: ");
+        scanf("%s", mv.time);
+        printf("Enter ticket price: ");
+        scanf("%f", &mv.price);
+        printf("Enter seats available: ");
+        scanf("%d", &mv.seats_available);
+        fwrite(&mv, sizeof(mv), 1, fp);
+        printf("\nDo you want to add another movie? (y/n): ");
+        scanf(" %c", &ch);
+    } while(ch == 'y' || ch == 'Y');
+
+    fclose(fp);
+}
+
+int main() {
+    int choice;
+
+    while(1) {
+        printf("Movie Booking System\n");
+        printf("--------------------\n");
+        printf("1. Display list of movies\n");
+        printf("2. Book a movie\n");
+        printf("3. Add a movie\n");
+        printf("4. Exit\n");
+        printf("\nEnter your choice: ");
+        scanf("%d", &choice);
+
+        switch(choice) {
+            case 1:
+                display_movies();
+                break;
+            case 2:
+                book_movie();
+                break;
+            case 3:
+                add_movie();
+                break;
+            case 4:
+                printf("Exiting program\n");
+                exit(0);
+            default:
+                printf("Invalid choice\n");
+        }
+    }
+
+    return 0;
+}
